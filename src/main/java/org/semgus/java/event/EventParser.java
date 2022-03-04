@@ -21,7 +21,7 @@ public class EventParser {
     public static List<SpecEvent> parse(Reader jsonReader) throws IOException, ParseException, DeserializationException {
         Object eventsDto = JSON_PARSER.parse(jsonReader);
         if (!(eventsDto instanceof JSONArray)) {
-            throw new DeserializationException("Event array must be a JSON array!", "");
+            throw new DeserializationException("Event array must be a JSON array!");
         }
         return parse((JSONArray)eventsDto);
     }
@@ -29,7 +29,7 @@ public class EventParser {
     public static List<SpecEvent> parse(String json) throws ParseException, DeserializationException {
         Object eventsDto = JSON_PARSER.parse(json);
         if (!(eventsDto instanceof JSONArray)) {
-            throw new DeserializationException("Event array must be a JSON array!", "");
+            throw new DeserializationException("Event array must be a JSON array!");
         }
         return parse((JSONArray)eventsDto);
     }
@@ -62,7 +62,7 @@ public class EventParser {
             case "constraint" -> parseConstraint(eventDto);
             case "synth-fun" -> parseSynthFun(eventDto);
             default -> throw new DeserializationException(
-                    String.format("Unknown specification event \"%s\"", eventType), "type");
+                    String.format("Unknown specification event \"%s\"", eventType), "$event");
         };
     }
 
