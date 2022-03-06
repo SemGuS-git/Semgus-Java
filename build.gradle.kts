@@ -1,5 +1,6 @@
 plugins {
     java
+    `maven-publish`
 }
 
 group = "org.semgus"
@@ -29,5 +30,14 @@ tasks.getByName<Jar>("jar") {
         attributes(
             "Main-Class" to "org.semgus.java.Main"
         )
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            artifactId = "semgus-java"
+            from(components["java"])
+        }
     }
 }
