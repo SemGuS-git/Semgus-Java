@@ -69,7 +69,6 @@ public class EventParser {
     private static SpecEvent parseSetInfo(JSONObject eventDto) throws DeserializationException {
         String keyword = JsonUtils.getString(eventDto, "keyword");
         Object valueDtoRaw = JsonUtils.get(eventDto, "value");
-        AttributeValue value;
         try {
             return new MetaSpecEvent.SetInfoEvent(keyword, AttributeValue.deserialize(valueDtoRaw));
         } catch (DeserializationException e) {
