@@ -6,7 +6,8 @@ import org.semgus.java.object.SmtTerm;
 import java.util.List;
 import java.util.Map;
 
-public record SemgusProblem(Map<String, SemgusNonTerminal> nonTerminals, List<SmtTerm> constraints) {
+public record SemgusProblem(String targetName, SemgusNonTerminal targetNonTerminal,
+                            Map<String, SemgusNonTerminal> nonTerminals, List<SmtTerm> constraints) {
 
     public String dump() {
         StringBuilder sb = new StringBuilder();
@@ -21,7 +22,7 @@ public record SemgusProblem(Map<String, SemgusNonTerminal> nonTerminals, List<Sm
                 }
                 sb.append("\n");
                 for (SemanticRule rule : production.semanticRules()) {
-                    sb.append("    ").append(rule.head()).append(" ⇐ ");
+                    sb.append("    ").append(rule.head()).append(" :- ");
                     boolean first = true;
                     for (RelationApp rel : rule.bodyRelations()) {
                         if (first) {

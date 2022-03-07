@@ -148,7 +148,7 @@ public class ProblemGenerator {
                                 .collect(Collectors.toList())));
             }
         }
-        return new SemgusProblem(nonTerminals, constraints);
+        return new SemgusProblem(synthFun.name(), nonTerminals.get(synthFun.termType()), nonTerminals, constraints);
     }
 
     private static class TermType {
