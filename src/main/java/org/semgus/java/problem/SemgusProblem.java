@@ -1,5 +1,6 @@
 package org.semgus.java.problem;
 
+import org.semgus.java.object.AttributeValue;
 import org.semgus.java.object.RelationApp;
 import org.semgus.java.object.SmtTerm;
 
@@ -7,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 public record SemgusProblem(String targetName, SemgusNonTerminal targetNonTerminal,
-                            Map<String, SemgusNonTerminal> nonTerminals, List<SmtTerm> constraints) {
+                            Map<String, SemgusNonTerminal> nonTerminals, List<SmtTerm> constraints,
+                            Map<String, AttributeValue> metadata) {
 
     public String dump() {
         StringBuilder sb = new StringBuilder();

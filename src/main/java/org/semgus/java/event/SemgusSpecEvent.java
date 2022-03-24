@@ -7,7 +7,6 @@ import org.semgus.java.object.TypedVar;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public interface SemgusSpecEvent extends SpecEvent {
 
@@ -32,7 +31,7 @@ public interface SemgusSpecEvent extends SpecEvent {
             RelationApp head,
             List<RelationApp> bodyRelations,
             SmtTerm constraint,
-            Set<AnnotatedVar> variables
+            Map<String, AnnotatedVar> variables
     ) implements SemgusSpecEvent {
 
         public static record Constructor(String name, List<TypedVar> arguments, String returnType) {

@@ -179,7 +179,7 @@ public class EventParser {
         }
 
         return new HornClauseEvent(
-                constructor, head, Arrays.asList(bodyRelations), constraint, new HashSet<>(variables.values()));
+                constructor, head, Arrays.asList(bodyRelations), constraint, variables);
     }
 
     private static SpecEvent parseConstraint(JSONObject eventDto) throws DeserializationException {
