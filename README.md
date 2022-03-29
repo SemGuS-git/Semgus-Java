@@ -5,8 +5,19 @@ output into a usable data structure for JVM-based languages.
 
 ## Requirements
 
+The recommended way to use SemGuS-Java is to install it from Maven via [JitPack](https://jitpack.io/#SemGuS-git/Semgus-Java),
+which is accomplished in Gradle as follows:
+```kotlin
+repositories {
+    maven("https://jitpack.io") { name = "Jitpack" }
+}
+
+dependencies {
+    implementation("com.github.SemGuS-git:Semgus-Java:1.0.0")
+}
+```
 SemGuS-Java depends at runtime on JSON-Simple and at compile-time on JSR-305, which is available as part of Google
-FindBugs. These dependencies are available at the following Maven coordinates:
+FindBugs. These dependencies are available at the following Maven coordinates, if you wish to install them manually:
 ```kotlin
 repositories {
     mavenCentral()
