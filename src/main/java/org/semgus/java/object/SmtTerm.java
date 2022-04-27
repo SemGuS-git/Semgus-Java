@@ -6,6 +6,7 @@ import org.semgus.java.util.DeserializationException;
 import org.semgus.java.util.JsonUtils;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,6 +34,7 @@ public interface SmtTerm {
                 case "exists" -> deserializeQuantifier(termDto, Quantifier.Type.EXISTS); // an existential quantifier
                 case "forall" -> deserializeQuantifier(termDto, Quantifier.Type.FOR_ALL); // a universal quantifier
                 case "variable" -> deserializeVariable(termDto); // a variable
+                case "bitvector" -> deserializeBitVector(termDto); // a bit vector
                 default -> throw new DeserializationException(
                         String.format("Unknown term type \"%s\"", termType), "$termType");
             };
@@ -115,6 +117,81 @@ public interface SmtTerm {
      */
     private static SmtTerm deserializeVariable(JSONObject termDto) throws DeserializationException {
         return new Variable(JsonUtils.getString(termDto, "name"), JsonUtils.getString(termDto, "sort"));
+    }
+
+    /**
+     * Deserializes a bit vector constant.
+     *
+     * @param termDto The JSON representation of the bit vector constant.
+     * @return The deserialized bit vector constant.
+     * @throws DeserializationException If {@code termDto} is not a valid representation of a bit vector constant.
+     */
+    private static SmtTerm deserializeBitVector(JSONObject termDto) throws DeserializationException {
+        // deserialize size
+        int size = JsonUtils.getInt(termDto, "size");
+        if (size < 0) {
+            throw new DeserializationException("Bit vector size must be non-negative!", "size");
+        }
+
+        // deserialize the bit field string
+        String bitVecStr = JsonUtils.getString(termDto, "value");
+        if (!bitVecStr.startsWith("0x")) {
+            throw new DeserializationException("Bit vector value must start with \"0x\"!", "value");
+        }
+        int bitVecStrLen = bitVecStr.length() - 2;
+        int unpaddedByteCount = bitVecStrLen / 2;
+
+        // parse out the bit field
+        byte[] bitField;
+        try {
+            if ((bitVecStrLen % 2) == 1) { // hex string is of odd length; need to pad the most significant byte
+                bitField = new byte[unpaddedByteCount + 1];
+                bitField[unpaddedByteCount] = (byte)readHexChar(bitVecStr.charAt(2));
+            } else { // hex string is of even length; no bytes need to be padded
+                bitField = new byte[unpaddedByteCount];
+            }
+            for (int i = 0; i < unpaddedByteCount; i++) {
+                bitField[i] = (byte)(readHexChar(bitVecStr.charAt(bitVecStrLen - i * 2 - 1))
+                        & (readHexChar(bitVecStr.charAt(bitVecStrLen - i * 2 - 2)) << 4));
+            }
+        } catch (DeserializationException e) {
+            throw e.prepend("value");
+        }
+        BitSet bitVecValue = BitSet.valueOf(bitField);
+        if (bitVecValue.nextSetBit(size) != -1) { // ensure there are no set bits beyond the vector size
+            throw new DeserializationException("Bit vector value is wider than bit vector size!");
+        }
+
+        return new CBitVector(size, bitVecValue);
+    }
+
+    /**
+     * Parses a hexadecimal character into its corresponding numeric value.
+     *
+     * @param hexChar The hexadecimal character.
+     * @return The numeric value of {@code hexChar},
+     * @throws DeserializationException If {@code hexChar} is not a valid hexadecimal character.
+     */
+    private static int readHexChar(char hexChar) throws DeserializationException {
+        return switch (hexChar) {
+            case '0' -> 0x0;
+            case '1' -> 0x1;
+            case '2' -> 0x2;
+            case '3' -> 0x3;
+            case '4' -> 0x4;
+            case '5' -> 0x5;
+            case '6' -> 0x6;
+            case '7' -> 0x7;
+            case '8' -> 0x8;
+            case '9' -> 0x9;
+            case 'a', 'A' -> 0xA;
+            case 'b', 'B' -> 0xB;
+            case 'c', 'C' -> 0xC;
+            case 'd', 'D' -> 0xD;
+            case 'e', 'E' -> 0xE;
+            case 'f', 'F' -> 0xF;
+            default -> throw new DeserializationException("Not a valid hexadecimal character: " + hexChar);
+        };
     }
 
     /**
@@ -237,13 +314,32 @@ public interface SmtTerm {
     /**
      * Represents a numeric constant in an SMT formula.
      *
-     * @param value the value of the numeric constant.
+     * @param value The value of the numeric constant.
      */
     record CNumber(long value) implements SmtTerm { // TODO should this be a decimal type?
 
         @Override
         public String toString() {
             return Long.toString(value);
+        }
+
+    }
+
+    /**
+     * Represents a bit vector constant in an SMT formula.
+     *
+     * @param size  The width of the bit vector.
+     * @param value The value of the bit vector constant.
+     */
+    record CBitVector(int size, BitSet value) implements SmtTerm {
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder("<");
+            for (int i = size - 1; i >= 0; i--) {
+                sb.append(value.get(i) ? '1' : '0');
+            }
+            return sb.append(">").toString();
         }
 
     }
