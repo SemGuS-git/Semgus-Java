@@ -8,14 +8,9 @@ package org.semgus.java.util;
 public class DeserializationException extends Exception {
 
     /**
-     * An error message indicating what went wrong.
-     */
-    private final String errorMessage;
-
-    /**
      * The path in the JSON document to the location of the error, delimited by periods.
      */
-    private final String path;
+    private String path;
 
     /**
      * Constructs a deserialization exception at a given path.
@@ -24,8 +19,7 @@ public class DeserializationException extends Exception {
      * @param path    The path to the location of the error.
      */
     public DeserializationException(String message, String path) {
-        super(message + ": " + getPathDisplayText(path));
-        this.errorMessage = message;
+        super(message);
         this.path = path;
     }
 
@@ -56,8 +50,7 @@ public class DeserializationException extends Exception {
      * @param cause   The exception causing the deserialization error.
      */
     public DeserializationException(String message, String path, Throwable cause) {
-        super(message + ": " + getPathDisplayText(path), cause);
-        this.errorMessage = message;
+        super(message, cause);
         this.path = path;
     }
 
@@ -88,7 +81,7 @@ public class DeserializationException extends Exception {
      * @return The error message.
      */
     public String getErrorMessage() {
-        return errorMessage;
+        return super.getMessage();
     }
 
     /**
@@ -100,19 +93,24 @@ public class DeserializationException extends Exception {
         return path;
     }
 
+    @Override
+    public String getMessage() {
+        return getErrorMessage() + " [" + getPathDisplayText(getPath()) + "]";
+    }
+
     /**
-     * Constructs a new deserialization exception by prepending a section of the path.
+     * Prepends a path segment to the path of this exception.
      *
      * @param pathPrefix The path segment to prepend.
      * @return The augmented exception.
      */
     public DeserializationException prepend(String pathPrefix) {
-        return pathPrefix.isEmpty() ? this
-                : new DeserializationException(errorMessage, pathPrefix + "." + path, getCause());
+        path = path.isEmpty() ? pathPrefix : (pathPrefix + "." + path);
+        return this;
     }
 
     /**
-     * Constructs a new deserialization exception by prepending an index as a path segment.
+     * Prepends an index to the path of this exception.
      *
      * @param pathPrefixIndex The index to prepend.
      * @return The augmented exception.
