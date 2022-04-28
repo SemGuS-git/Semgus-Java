@@ -180,8 +180,8 @@ public interface SmtTerm {
         if (!bitVecStr.startsWith("0x")) {
             throw new DeserializationException("Bit vector value must start with \"0x\"!", "value");
         }
-        int bitVecStrLen = bitVecStr.length() - 2;
-        int unpaddedByteCount = bitVecStrLen / 2;
+        int bitVecStrLen = bitVecStr.length();
+        int unpaddedByteCount = bitVecStrLen / 2 - 1; // minus one to account for the "0x"
 
         // parse out the bit field
         byte[] bitField;
@@ -194,7 +194,7 @@ public interface SmtTerm {
             }
             for (int i = 0; i < unpaddedByteCount; i++) {
                 bitField[i] = (byte)(readHexChar(bitVecStr.charAt(bitVecStrLen - i * 2 - 1))
-                        & (readHexChar(bitVecStr.charAt(bitVecStrLen - i * 2 - 2)) << 4));
+                        | (readHexChar(bitVecStr.charAt(bitVecStrLen - i * 2 - 2)) << 4));
             }
         } catch (DeserializationException e) {
             throw e.prepend("value");
