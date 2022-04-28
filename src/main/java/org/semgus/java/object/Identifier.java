@@ -1,7 +1,6 @@
 package org.semgus.java.object;
 
 import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.semgus.java.util.DeserializationException;
 
 import java.util.Arrays;
@@ -42,7 +41,7 @@ public record Identifier(String name, Index... indices) {
                 try {
                     indices[i] = Index.deserialize(idDto.get(i + 1));
                 } catch (DeserializationException e) {
-                    throw e.prepend(i);
+                    throw e.prepend(i + 1);
                 }
             }
 
@@ -97,8 +96,8 @@ public record Identifier(String name, Index... indices) {
         static Index deserialize(Object indexDtoRaw) throws DeserializationException {
             if (indexDtoRaw instanceof String index) {
                 return new NString(index);
-            } else if (indexDtoRaw instanceof Integer index) {
-                return new NInt(index);
+            } else if (indexDtoRaw instanceof Number index) {
+                return new NInt(index.intValue());
             }
             throw new DeserializationException("Identifier index must either be a string or integer constant!");
         }
