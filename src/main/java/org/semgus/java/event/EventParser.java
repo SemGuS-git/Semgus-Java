@@ -92,6 +92,22 @@ public class EventParser {
     }
 
     /**
+     * Parses a string as a parser event.
+     *
+     * @param eventJson The JSON string.
+     * @return The deserialized parser event.
+     * @throws ParseException           If the string is not well-formed JSON.
+     * @throws DeserializationException If the JSON is not a valid representation of a parser event.
+     */
+    public static SpecEvent parseEvent(String eventJson) throws ParseException, DeserializationException {
+        Object eventDto = JSON_PARSER.parse(eventJson);
+        if (!(eventDto instanceof JSONObject)) {
+            throw new DeserializationException("Event object must be a JSON object!");
+        }
+        return parseEvent((JSONObject)eventDto);
+    }
+
+    /**
      * Deserializes a JSON object as a parser event.
      *
      * @param eventDto The JSON object.
