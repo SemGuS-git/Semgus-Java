@@ -271,26 +271,46 @@ public class EventParser {
             variables.put(variable, new AnnotatedVar(variable, new HashMap<>()));
         }
 
-        // parse input/output annotations for variables
-        List<String> inputVariables = JsonUtils.getStrings(eventDto, "inputVariables");
-        List<String> outputVariables = JsonUtils.getStrings(eventDto, "outputVariables");
-        for (int i = 0; i < inputVariables.size(); i++) {
-            AnnotatedVar variable = variables.get(inputVariables.get(i));
-            if (variable == null) {
-                throw new DeserializationException(
-                        String.format("Unknown variable \"%s\" declared as input", inputVariables.get(i)),
-                        "inputVariables." + i);
+        // parse input variable annotations
+        Object inputVariablesRaw = eventDto.get("inputVariables");
+        if (inputVariablesRaw != null) {
+            // if present, ensure it's an array of strings
+            if (!(inputVariablesRaw instanceof JSONArray)) {
+                throw new DeserializationException("Input variable list must be a JSON array!", "inputVariables");
             }
-            variable.attributes().put("input", new AttributeValue.Unit());
+            List<String> inputVariables = JsonUtils.ensureStrings((JSONArray)inputVariablesRaw);
+
+            // annotate the listed variables
+            for (int i = 0; i < inputVariables.size(); i++) {
+                AnnotatedVar variable = variables.get(inputVariables.get(i));
+                if (variable == null) {
+                    throw new DeserializationException(
+                            String.format("Unknown variable \"%s\" declared as input", inputVariables.get(i)),
+                            "inputVariables." + i);
+                }
+                variable.attributes().put("input", new AttributeValue.Unit());
+            }
         }
-        for (int i = 0; i < outputVariables.size(); i++) {
-            AnnotatedVar variable = variables.get(outputVariables.get(i));
-            if (variable == null) {
-                throw new DeserializationException(
-                        String.format("Unknown variable \"%s\" declared as output", outputVariables.get(i)),
-                        "outputVariables." + i);
+
+        // ditto for output variable annotations
+        Object outputVariablesRaw = eventDto.get("outputVariables");
+        if (outputVariablesRaw != null) {
+            // if present, ensure it's an array of strings
+            if (!(outputVariablesRaw instanceof JSONArray)) {
+                throw new DeserializationException("Output variable list must be a JSON array!", "outputVariables");
             }
-            variable.attributes().put("output", new AttributeValue.Unit());
+            List<String> outputVariables = JsonUtils.ensureStrings((JSONArray)outputVariablesRaw);
+
+            // annotate the listed variables
+            for (int i = 0; i < outputVariables.size(); i++) {
+                AnnotatedVar variable = variables.get(outputVariables.get(i));
+                if (variable == null) {
+                    throw new DeserializationException(
+                            String.format("Unknown variable \"%s\" declared as output", outputVariables.get(i)),
+                            "outputVariables." + i);
+                }
+                variable.attributes().put("output", new AttributeValue.Unit());
+            }
         }
 
         return new HornClauseEvent(
