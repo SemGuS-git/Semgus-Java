@@ -182,24 +182,37 @@ public class EventParser {
 
         // parse constructor specification
         String constructorName, returnType;
-        List<String> constructorArgs, constructorArgTypes;
+        List<String> constructorArgs;
+        JSONArray constructorArgTypesDto;
         try {
             constructorName = JsonUtils.getString(constructorDto, "name");
             returnType = JsonUtils.getString(constructorDto, "returnSort");
             constructorArgs = JsonUtils.getStrings(constructorDto, "arguments");
-            constructorArgTypes = JsonUtils.getStrings(constructorDto, "argumentSorts");
+            constructorArgTypesDto = JsonUtils.getArray(constructorDto, "argumentSorts");
         } catch (DeserializationException e) {
             throw e.prepend("constructor");
         }
-        if (constructorArgs.size() != constructorArgTypes.size()) { // ensure args and arg types coincide
+        if (constructorArgs.size() != constructorArgTypesDto.size()) { // ensure args and arg types coincide
             throw new DeserializationException(
                     String.format(
                             "Argument sorts and arguments of CHC constructor have different lengths %d != %d",
-                            constructorArgTypes.size(), constructorArgs.size()),
+                            constructorArgTypesDto.size(), constructorArgs.size()),
                     "constructor");
         }
+
+        // parse constructor arg type identifiers
+        Identifier[] constructorArgTypes = new Identifier[constructorArgTypesDto.size()];
+        for (int i = 0; i < constructorArgTypes.length; i++) {
+            try {
+                constructorArgTypes[i] = Identifier.deserialize(constructorArgTypesDto.get(i));
+            } catch (DeserializationException e) {
+                throw e.prepend("constructor.argumentSorts." + i);
+            }
+        }
         HornClauseEvent.Constructor constructor = new HornClauseEvent.Constructor(
-                constructorName, TypedVar.fromNamesAndTypes(constructorArgs, constructorArgTypes), returnType);
+                constructorName,
+                TypedVar.fromNamesAndTypes(constructorArgs, Arrays.asList(constructorArgTypes)),
+                returnType);
 
         // parse head relation
         JSONObject headDto = JsonUtils.getObject(eventDto, "head");

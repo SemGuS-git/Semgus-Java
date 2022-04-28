@@ -50,8 +50,16 @@ public interface SmtTerm {
      * @throws DeserializationException If {@code termDto} is not a valid representation of a function application.
      */
     private static SmtTerm deserializeApplication(JSONObject termDto) throws DeserializationException {
-        String name = JsonUtils.getString(termDto, "name");
         String returnType = JsonUtils.getString(termDto, "returnSort");
+
+        // deserialize function identifier
+        Object idDto = JsonUtils.get(termDto, "name");
+        Identifier id;
+        try {
+            id = Identifier.deserialize(idDto);
+        } catch (DeserializationException e) {
+            throw e.prepend("name");
+        }
 
         // zip together argument terms and argument types
         List<String> argTypes = JsonUtils.getStrings(termDto, "argumentSorts");
@@ -70,7 +78,7 @@ public interface SmtTerm {
             }
         }
 
-        return new Application(name, returnType, Arrays.asList(argTerms));
+        return new Application(id, returnType, Arrays.asList(argTerms));
     }
 
     /**
@@ -89,8 +97,15 @@ public interface SmtTerm {
         for (int i = 0; i < bindings.length; i++) {
             JSONObject bindingDto = bindingsDto.get(i);
             try {
-                bindings[i] = new TypedVar(
-                        JsonUtils.getString(bindingDto, "name"), JsonUtils.getString(bindingDto, "sort"));
+                String name = JsonUtils.getString(bindingDto, "name");
+                Object typeDto = JsonUtils.get(bindingDto, "sort");
+                Identifier type;
+                try {
+                    type = Identifier.deserialize(typeDto);
+                } catch (DeserializationException e) {
+                    throw e.prepend("sort");
+                }
+                bindings[i] = new TypedVar(name, type);
             } catch (DeserializationException e) {
                 throw e.prepend("bindings." + i);
             }
@@ -116,7 +131,15 @@ public interface SmtTerm {
      * @throws DeserializationException If {@code termDto} is not a valid representation of a variable.
      */
     private static SmtTerm deserializeVariable(JSONObject termDto) throws DeserializationException {
-        return new Variable(JsonUtils.getString(termDto, "name"), JsonUtils.getString(termDto, "sort"));
+        String name = JsonUtils.getString(termDto, "name");
+        Object typeDto = JsonUtils.get(termDto, "sort");
+        Identifier type;
+        try {
+            type = Identifier.deserialize(typeDto);
+        } catch (DeserializationException e) {
+            throw e.prepend("sort");
+        }
+        return new Variable(name, type);
     }
 
     /**
@@ -197,11 +220,11 @@ public interface SmtTerm {
     /**
      * Represents a function application in an SMT formula.
      *
-     * @param name       The name of the function.
+     * @param name       The identifier for the function.
      * @param returnType The function's return type.
      * @param arguments  The arguments to the function.
      */
-    record Application(String name, String returnType, List<TypedTerm> arguments) implements SmtTerm {
+    record Application(Identifier name, String returnType, List<TypedTerm> arguments) implements SmtTerm {
 
         @Override
         public String toString() {
@@ -286,9 +309,9 @@ public interface SmtTerm {
      * Represents a variable in an SMT formula.
      *
      * @param name The name of the variable.
-     * @param type The name of the type of the variable.
+     * @param type The identifier for the type of the variable.
      */
-    record Variable(String name, String type) implements SmtTerm {
+    record Variable(String name, Identifier type) implements SmtTerm {
 
         @Override
         public String toString() {
