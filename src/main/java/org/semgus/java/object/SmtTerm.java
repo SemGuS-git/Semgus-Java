@@ -50,8 +50,6 @@ public interface SmtTerm {
      * @throws DeserializationException If {@code termDto} is not a valid representation of a function application.
      */
     private static SmtTerm deserializeApplication(JSONObject termDto) throws DeserializationException {
-        String returnType = JsonUtils.getString(termDto, "returnSort");
-
         // deserialize function identifier
         Object idDto = JsonUtils.get(termDto, "name");
         Identifier id;
@@ -61,8 +59,17 @@ public interface SmtTerm {
             throw e.prepend("name");
         }
 
+        // deserialize return type identifier
+        Object returnTypeDto = JsonUtils.get(termDto, "returnSort");
+        Identifier returnType;
+        try {
+            returnType = Identifier.deserialize(returnTypeDto);
+        } catch (DeserializationException e) {
+            throw e.prepend("returnSort");
+        }
+
         // zip together argument terms and argument types
-        List<String> argTypes = JsonUtils.getStrings(termDto, "argumentSorts");
+        JSONArray argTypes = JsonUtils.getArray(termDto, "argumentSorts");
         JSONArray args = JsonUtils.getArray(termDto, "arguments");
         if (argTypes.size() != args.size()) {
             throw new DeserializationException(String.format(
@@ -71,11 +78,23 @@ public interface SmtTerm {
         }
         Application.TypedTerm[] argTerms = new Application.TypedTerm[argTypes.size()];
         for (int i = 0; i < argTerms.length; i++) {
+            // deserialize type
+            Identifier type;
             try {
-                argTerms[i] = new Application.TypedTerm(argTypes.get(i), deserialize(args.get(i)));
+                type = Identifier.deserialize(argTypes.get(i));
+            } catch (DeserializationException e) {
+                throw e.prepend("argumentSorts." + i);
+            }
+
+            // deserialize term
+            SmtTerm term;
+            try {
+                term = deserialize(args.get(i));
             } catch (DeserializationException e) {
                 throw e.prepend("arguments." + i);
             }
+
+            argTerms[i] = new Application.TypedTerm(type, term);
         }
 
         return new Application(id, returnType, Arrays.asList(argTerms));
@@ -224,7 +243,7 @@ public interface SmtTerm {
      * @param returnType The function's return type.
      * @param arguments  The arguments to the function.
      */
-    record Application(Identifier name, String returnType, List<TypedTerm> arguments) implements SmtTerm {
+    record Application(Identifier name, Identifier returnType, List<TypedTerm> arguments) implements SmtTerm {
 
         @Override
         public String toString() {
@@ -241,7 +260,7 @@ public interface SmtTerm {
          * @param type The argument type.
          * @param term The subterm being passed as an argument.
          */
-        public static record TypedTerm(String type, SmtTerm term) {
+        public static record TypedTerm(Identifier type, SmtTerm term) {
 
             @Override
             public String toString() {
