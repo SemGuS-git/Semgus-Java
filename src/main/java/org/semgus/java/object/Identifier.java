@@ -96,7 +96,7 @@ public record Identifier(String name, Index... indices) {
         static Index deserialize(Object indexDtoRaw) throws DeserializationException {
             if (indexDtoRaw instanceof String index) {
                 return new NString(index);
-            } else if (indexDtoRaw instanceof Number index) {
+            } else if (indexDtoRaw instanceof Long index) {
                 return new NInt(index.intValue());
             }
             throw new DeserializationException("Identifier index must either be a string or integer constant!");

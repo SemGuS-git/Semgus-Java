@@ -44,19 +44,36 @@ public class JsonUtils {
     }
 
     /**
-     * Gets an integer from a JSON object.
+     * Gets a (long) integer from a JSON object.
+     *
+     * @param obj The JSON object.
+     * @param key The key to look up.
+     * @return The (long) integer value associated with {@code key}.
+     * @throws DeserializationException If there is no integer in {@code obj} at {@code key}.
+     */
+    public static long getLong(JSONObject obj, String key) throws DeserializationException {
+        Object value = obj.get(key);
+        if (!(value instanceof Long)) {
+            throw getTypeError(key, "an integer", value);
+        }
+        return (long)value;
+    }
+
+    /**
+     * Gets a integer from a JSON object.
      *
      * @param obj The JSON object.
      * @param key The key to look up.
      * @return The integer value associated with {@code key}.
-     * @throws DeserializationException If there is no integer in {@code obj} at {@code key}.
+     * @throws DeserializationException If there is no integer in {@code obj} at {@code key}, or if the value is too
+     *                                  large for the 32-bit signed integer type.
      */
     public static int getInt(JSONObject obj, String key) throws DeserializationException {
-        Object value = obj.get(key);
-        if (!(value instanceof Integer)) {
-            throw getTypeError(key, "an integer", value);
+        long longVal = getLong(obj, key);
+        if (longVal > Integer.MAX_VALUE || longVal < Integer.MIN_VALUE) {
+            throw getTypeError(key, "a 32-bit integer", longVal);
         }
-        return (int)value;
+        return (int)longVal;
     }
 
     /**
