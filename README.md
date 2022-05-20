@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.SemGuS-git:Semgus-Java:1.0.1")
+    implementation("com.github.SemGuS-git:Semgus-Java:1.0.2")
 }
 ```
 SemGuS-Java depends at runtime on JSON-Simple and at compile-time on JSR-305, which is available as part of Google
