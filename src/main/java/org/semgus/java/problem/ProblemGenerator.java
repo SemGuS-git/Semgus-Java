@@ -197,7 +197,8 @@ public class ProblemGenerator {
                 event.constructor().arguments(),
                 event.head(),
                 event.bodyRelations(),
-                event.constraint()));
+                event.constraint(),
+                event.variables()));
     }
 
     /**
@@ -246,9 +247,7 @@ public class ProblemGenerator {
                 productions.put(production.operator(), new SemgusProduction(
                         production.operator(),
                         termCtor.childTermTypes.stream().map(nonTerminals::get).collect(Collectors.toList()),
-                        termCtor.semanticRules.stream()
-                                .map(r -> new SemanticRule(r.childTermVars(), r.head(), r.bodyRelations(), r.constraint()))
-                                .collect(Collectors.toList())));
+                        new ArrayList<>(termCtor.semanticRules)));
             }
         }
 
