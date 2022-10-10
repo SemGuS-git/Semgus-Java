@@ -1,6 +1,5 @@
 package org.semgus.java;
 
-import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.semgus.java.event.EventParser;
 import org.semgus.java.event.SpecEvent;
@@ -19,7 +18,14 @@ import java.util.List;
 /**
  * Entry point class that simply reads a SemGuS JSON document, parses it, and dumps the problem to standard output.
  */
-public class Main {
+public final class Main {
+
+    /**
+     * Empty helper class constructor.
+     */
+    private Main() {
+        // NO-OP
+    }
 
     /**
      * Entry point: reads a JSON document, parses it as a SemGuS JSON specification, and dumps it to standard output.

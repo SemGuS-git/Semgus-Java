@@ -29,7 +29,7 @@ dependencies {
     implementation("com.googlecode.json-simple:json-simple:1.1.1")
 }
 ```
-SemGuS-Java targets Java 16 and makes extensive use of records to represent SemGuS objects.
+SemGuS-Java targets Java 17 and makes extensive use of sealed types and records to represent SemGuS objects.
 
 ## Usage
 

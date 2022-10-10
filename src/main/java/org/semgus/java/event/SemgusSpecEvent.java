@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * A SemGuS parser event of the "semgus" type.
  */
-public interface SemgusSpecEvent extends SpecEvent {
+public sealed interface SemgusSpecEvent extends SpecEvent {
 
     /**
      * A "check-synth" event indicating that the synthesis problem specification is done.
@@ -43,7 +43,7 @@ public interface SemgusSpecEvent extends SpecEvent {
          * @param name     The name of the constructor.
          * @param children The names of child term types for this constructor.
          */
-        public static record Constructor(String name, List<String> children) {
+        public record Constructor(String name, List<String> children) {
             // NO-OP
         }
 
@@ -73,7 +73,7 @@ public interface SemgusSpecEvent extends SpecEvent {
          * @param arguments  The arguments to the constructor.
          * @param returnType The name of the term type constructed by the constructor.
          */
-        public static record Constructor(String name, List<TypedVar> arguments, String returnType) {
+        public record Constructor(String name, List<TypedVar> arguments, String returnType) {
             // NO-OP
         }
 
@@ -104,7 +104,7 @@ public interface SemgusSpecEvent extends SpecEvent {
          * @param termType    The term type corresponding to this non-terminal.
          * @param productions A set of productions, indexed by production name.
          */
-        public static record NonTerminal(String termType, Map<String, Production> productions) {
+        public record NonTerminal(String termType, Map<String, Production> productions) {
             // NO-OP
         }
 
@@ -114,7 +114,7 @@ public interface SemgusSpecEvent extends SpecEvent {
          * @param operator    The name/symbol for this production.
          * @param occurrences The names of non-terminals for child terms.
          */
-        public static record Production(String operator, List<String> occurrences) {
+        public record Production(String operator, List<String> occurrences) {
             // NO-OP
         }
 

@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 /**
  * Represents a term of an SMT formula.
  */
-public interface SmtTerm {
+public sealed interface SmtTerm {
 
     /**
      * Deserializes an SMT formula term in the SemGuS JSON format.
@@ -260,7 +260,7 @@ public interface SmtTerm {
          * @param type The argument type.
          * @param term The subterm being passed as an argument.
          */
-        public static record TypedTerm(Identifier type, SmtTerm term) {
+        public record TypedTerm(Identifier type, SmtTerm term) {
 
             @Override
             public String toString() {

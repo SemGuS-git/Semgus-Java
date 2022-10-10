@@ -13,6 +13,11 @@ repositories {
     }
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
 dependencies {
     implementation("com.github.phantamanta44:jsr305:1.0.1")
     implementation("com.googlecode.json-simple:json-simple:1.1.1")

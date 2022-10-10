@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Represents the value of an SMT-Lib attribute. Used by SemGuS for various pieces of metadata.
  */
-public interface AttributeValue {
+public sealed interface AttributeValue {
 
     /**
      * Deserializes an attribute value from the SemGuS JSON format.

@@ -9,7 +9,14 @@ import java.util.List;
 /**
  * Helper class for deserializing simple data types from JSON objects and arrays.
  */
-public class JsonUtils {
+public final class JsonUtils {
+
+    /**
+     * Empty helper class constructor.
+     */
+    private JsonUtils() {
+        // NO-OP
+    }
 
     /**
      * Gets an arbitrary value from a JSON object.

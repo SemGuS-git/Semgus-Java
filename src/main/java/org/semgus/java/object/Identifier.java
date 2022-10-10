@@ -84,7 +84,7 @@ public record Identifier(String name, Index... indices) {
     /**
      * An index value for an indexed identifier.
      */
-    public interface Index {
+    public sealed interface Index {
 
         /**
          * Deserializes an index value for an identifier.

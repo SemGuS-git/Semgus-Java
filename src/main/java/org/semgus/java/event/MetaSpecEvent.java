@@ -5,7 +5,7 @@ import org.semgus.java.object.AttributeValue;
 /**
  * A SemGuS parser event of the "meta" type.
  */
-public interface MetaSpecEvent extends SpecEvent {
+public sealed interface MetaSpecEvent extends SpecEvent {
 
     /**
      * A "set-info" event specifying some problem metadata.
