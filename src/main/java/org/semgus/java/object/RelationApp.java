@@ -5,7 +5,6 @@ import org.json.simple.JSONObject;
 import org.semgus.java.util.DeserializationException;
 import org.semgus.java.util.JsonUtils;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,16 +36,32 @@ public record RelationApp(String name, List<TypedVar> arguments) {
         }
 
         // deserialize type identifiers
-        Identifier[] types = new Identifier[sigDto.size()];
-        for (int i = 0; i < types.length; i++) {
-            try {
-                types[i] = Identifier.deserialize(sigDto.get(i));
-            } catch (DeserializationException e) {
-                throw e.prepend("signature." + i);
-            }
+        List<Identifier> types;
+        try {
+            types = Identifier.deserializeList(sigDto);
+        } catch (DeserializationException e) {
+            throw e.prepend("signature");
         }
 
-        return new RelationApp(name, TypedVar.fromNamesAndTypes(args, Arrays.asList(types)));
+        return new RelationApp(name, TypedVar.fromNamesAndTypes(args, types));
+    }
+
+    /**
+     * Deserializes an relation application from the SemGuS JSON format at a given key in a parent JSON object.
+     *
+     * @param parentDto The parent JSON object.
+     * @param key       The key whose value should be deserialized.
+     * @return The deserialized relation application.
+     * @throws DeserializationException If the value at {@code key} is not a valid representation of a relation
+     *                                  application.
+     */
+    public static RelationApp deserializeAt(JSONObject parentDto, String key) throws DeserializationException {
+        JSONObject relAppDto = JsonUtils.getObject(parentDto, key);
+        try {
+            return deserialize(relAppDto);
+        } catch (DeserializationException e) {
+            throw e.prepend(key);
+        }
     }
 
     @Override

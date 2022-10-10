@@ -3,11 +3,9 @@ package org.semgus.java.problem;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
-import org.semgus.java.event.EventParser;
-import org.semgus.java.event.MetaSpecEvent;
-import org.semgus.java.event.SemgusSpecEvent;
-import org.semgus.java.event.SpecEvent;
+import org.semgus.java.event.*;
 import org.semgus.java.object.AttributeValue;
+import org.semgus.java.object.SmtContext;
 import org.semgus.java.object.SmtTerm;
 import org.semgus.java.util.DeserializationException;
 
@@ -98,6 +96,16 @@ public class ProblemGenerator {
     private final Map<String, AttributeValue> metadata = new HashMap<>();
 
     /**
+     * Collected auxiliary datatype definitions.
+     */
+    private final Map<String, SmtContext.Datatype> auxDatatypeDefs = new HashMap<>();
+
+    /**
+     * Collected auxiliary function definitions.
+     */
+    private final Map<String, SmtContext.Function> auxFunctionDefs = new HashMap<>();
+
+    /**
      * Collected term types.
      */
     private final Map<String, TermType> termTypes = new HashMap<>();
@@ -121,6 +129,10 @@ public class ProblemGenerator {
     public void consume(SpecEvent eventRaw) {
         if (eventRaw instanceof MetaSpecEvent.SetInfoEvent event) {
             consumeSetInfo(event);
+        } else if (eventRaw instanceof SmtSpecEvent.DefineFunctionEvent event) {
+            consumeDefineFunction(event);
+        } else if (eventRaw instanceof SmtSpecEvent.DefineDatatypeEvent event) {
+            consumeDefineDatatype(event);
         } else if (eventRaw instanceof DeclareTermTypeEvent event) {
             consumeDeclareTermType(event);
         } else if (eventRaw instanceof DefineTermTypeEvent event) {
@@ -141,6 +153,26 @@ public class ProblemGenerator {
      */
     private void consumeSetInfo(MetaSpecEvent.SetInfoEvent event) {
         metadata.put(event.keyword(), event.value());
+    }
+
+    /**
+     * Collects an auxiliary function definition from a "declare-datatype" event.
+     *
+     * @param event The event.
+     */
+    private void consumeDefineFunction(SmtSpecEvent.DefineFunctionEvent event) {
+        auxFunctionDefs.put(event.name(), new SmtContext.Function(event.name(), event.arguments(), event.body()));
+    }
+
+    /**
+     * Collects an auxiliary datatype definition from a "declare-datatype" event.
+     *
+     * @param event The event.
+     */
+    private void consumeDefineDatatype(SmtSpecEvent.DefineDatatypeEvent event) {
+        auxDatatypeDefs.put(event.name(), new SmtContext.Datatype(event.name(), event.constructors().stream()
+                .map(c -> new SmtContext.Datatype.Constructor(c.name(), c.argumentTypes()))
+                .collect(Collectors.toUnmodifiableMap(SmtContext.Datatype.Constructor::name, c -> c))));
     }
 
     /**
@@ -256,7 +288,8 @@ public class ProblemGenerator {
                 nonTerminals.get(synthFun.termType()),
                 nonTerminals,
                 new ArrayList<>(constraints),
-                new HashMap<>(metadata));
+                new HashMap<>(metadata),
+                new SmtContext(auxDatatypeDefs, auxFunctionDefs));
     }
 
     /**

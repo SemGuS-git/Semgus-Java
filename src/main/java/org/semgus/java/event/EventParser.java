@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.semgus.java.event.SemgusSpecEvent.*;
+import static org.semgus.java.event.SmtSpecEvent.*;
 
 /**
  * Helper class that deserializes SemGuS parser events from their JSON representations.
@@ -117,8 +118,17 @@ public class EventParser {
     public static SpecEvent parseEvent(JSONObject eventDto) throws DeserializationException {
         String eventType = JsonUtils.getString(eventDto, "$event");
         return switch (eventType) {
+            // meta events
             case "set-info" -> parseSetInfo(eventDto);
             case "end-of-stream" -> new MetaSpecEvent.StreamEndEvent();
+
+            // smt events
+            case "declare-function" -> parseDeclareFunction(eventDto);
+            case "define-function" -> parseDefineFunction(eventDto);
+            case "declare-datatype" -> parseDeclareDatatype(eventDto);
+            case "define-datatype" -> parseDefineDatatype(eventDto);
+
+            // semgus events
             case "check-synth" -> new CheckSynthEvent();
             case "declare-term-type" -> parseDeclareTermType(eventDto);
             case "define-term-type" -> parseDefineTermType(eventDto);
@@ -137,14 +147,119 @@ public class EventParser {
      * @return The deserialized event.
      * @throws DeserializationException If {@code eventDto} is not a valid representation of a "set-info" event.
      */
-    private static SpecEvent parseSetInfo(JSONObject eventDto) throws DeserializationException {
-        String keyword = JsonUtils.getString(eventDto, "keyword");
-        Object valueDtoRaw = JsonUtils.get(eventDto, "value");
+    private static MetaSpecEvent.SetInfoEvent parseSetInfo(JSONObject eventDto) throws DeserializationException {
+        return new MetaSpecEvent.SetInfoEvent(
+                JsonUtils.getString(eventDto, "keyword"),
+                AttributeValue.deserializeAt(eventDto, "value"));
+    }
+
+    /**
+     * Deserializes a "declare-function" event.
+     *
+     * @param eventDto The JSON representation of the event.
+     * @return The deserialized event.
+     * @throws DeserializationException If {@code eventDto} is not a valid representation of a "declare-function" event.
+     */
+    private static DeclareFunctionEvent parseDeclareFunction(JSONObject eventDto) throws DeserializationException {
+        String name = JsonUtils.getString(eventDto, "name");
+        JSONObject rankDto = JsonUtils.getObject(eventDto, "rank");
+
+        Identifier returnType;
+        List<Identifier> argumentTypes;
         try {
-            return new MetaSpecEvent.SetInfoEvent(keyword, AttributeValue.deserialize(valueDtoRaw));
+            returnType = Identifier.deserializeAt(rankDto, "returnSort");
+            JSONArray argumentTypesDto = JsonUtils.getArray(rankDto, "argumentSorts");
+            try {
+                argumentTypes = Identifier.deserializeList(argumentTypesDto);
+            } catch (DeserializationException e) {
+                throw e.prepend("argumentSorts");
+            }
         } catch (DeserializationException e) {
-            throw e.prepend("value");
+            throw e.prepend("rank");
         }
+
+        return new DeclareFunctionEvent(name, returnType, argumentTypes);
+    }
+
+    /**
+     * Deserializes a "define-function" event.
+     *
+     * @param eventDto The JSON representation of the event.
+     * @return The deserialized event.
+     * @throws DeserializationException If {@code eventDto} is not a valid representation of a "define-function" event.
+     */
+    private static DefineFunctionEvent parseDefineFunction(JSONObject eventDto) throws DeserializationException {
+        // extract the data shared with declare-function
+        DeclareFunctionEvent declEvent = parseDeclareFunction(eventDto);
+
+        JSONObject defnDto = JsonUtils.getObject(eventDto, "definition");
+
+        TypedVar[] arguments = new TypedVar[declEvent.argumentTypes().size()];
+        SmtTerm body;
+        try {
+            List<String> argNames = JsonUtils.getStrings(defnDto, "arguments");
+            if (argNames.size() != arguments.length) {
+                throw new DeserializationException(
+                        String.format(
+                                "Number of argument sorts and lambda arity differ %d != %d",
+                                arguments.length, argNames.size()),
+                        "arguments");
+            }
+            for (int i = 0; i < arguments.length; i++) {
+                arguments[i] = new TypedVar(argNames.get(i), declEvent.argumentTypes().get(i));
+            }
+
+            body = SmtTerm.deserializeAt(defnDto, "body");
+        } catch (DeserializationException e) {
+            throw e.prepend("definition");
+        }
+
+        return new DefineFunctionEvent(declEvent.name(), declEvent.returnType(), Arrays.asList(arguments), body);
+    }
+
+    /**
+     * Deserializes a "declare-datatype" event.
+     *
+     * @param eventDto The JSON representation of the event.
+     * @return The deserialized event.
+     * @throws DeserializationException If {@code eventDto} is not a valid representation of a "declare-datatype" event.
+     */
+    private static DeclareDatatypeEvent parseDeclareDatatype(JSONObject eventDto) throws DeserializationException {
+        return new DeclareDatatypeEvent(JsonUtils.getString(eventDto, "name")); // TODO arity is currently unused
+    }
+
+    /**
+     * Deserializes a "define-datatype" event.
+     *
+     * @param eventDto The JSON representation of the event.
+     * @return The deserialized event.
+     * @throws DeserializationException If {@code eventDto} is not a valid representation of a "define-datatype" event.
+     */
+    private static DefineDatatypeEvent parseDefineDatatype(JSONObject eventDto) throws DeserializationException {
+        String name = JsonUtils.getString(eventDto, "name");
+        List<JSONObject> constructorsDto = JsonUtils.getObjects(eventDto, "constructors");
+
+        DefineDatatypeEvent.Constructor[] constructors = new DefineDatatypeEvent.Constructor[constructorsDto.size()];
+        for (int i = 0; i < constructors.length; i++) {
+            JSONObject constructorDto = constructorsDto.get(i);
+            try {
+                String constructorName = JsonUtils.getString(constructorDto, "name");
+                JSONArray argumentTypesDto = JsonUtils.getArray(constructorDto, "children");
+
+                List<Identifier> argumentTypes;
+                try {
+                    argumentTypes = Identifier.deserializeList(argumentTypesDto);
+                } catch (DeserializationException e) {
+                    throw e.prepend("children");
+                }
+
+                constructors[i] = new DefineDatatypeEvent.Constructor(constructorName, argumentTypes);
+            } catch (DeserializationException e) {
+                throw e.prepend("constructors." + i);
+            }
+        }
+
+        return new DefineDatatypeEvent(name, Arrays.asList(constructors));
     }
 
     /**
@@ -155,7 +270,7 @@ public class EventParser {
      * @throws DeserializationException If {@code eventDto} is not a valid representation of a "declare-term-type"
      *                                  event.
      */
-    private static SpecEvent parseDeclareTermType(JSONObject eventDto) throws DeserializationException {
+    private static DeclareTermTypeEvent parseDeclareTermType(JSONObject eventDto) throws DeserializationException {
         return new DeclareTermTypeEvent(JsonUtils.getString(eventDto, "name"));
     }
 
@@ -166,7 +281,7 @@ public class EventParser {
      * @return The deserialized event.
      * @throws DeserializationException If {@code eventDto} is not a valid representation of a "define-term-type" event.
      */
-    private static SpecEvent parseDefineTermType(JSONObject eventDto) throws DeserializationException {
+    private static DefineTermTypeEvent parseDefineTermType(JSONObject eventDto) throws DeserializationException {
         String name = JsonUtils.getString(eventDto, "name");
         List<JSONObject> constructorsDto = JsonUtils.getObjects(eventDto, "constructors");
 
@@ -193,7 +308,7 @@ public class EventParser {
      * @return The deserialized event.
      * @throws DeserializationException If {@code eventDto} is not a valid representation of a "chc" event.
      */
-    private static SpecEvent parseHornClause(JSONObject eventDto) throws DeserializationException {
+    private static HornClauseEvent parseHornClause(JSONObject eventDto) throws DeserializationException {
         JSONObject constructorDto = JsonUtils.getObject(eventDto, "constructor");
 
         // parse constructor specification
@@ -217,27 +332,19 @@ public class EventParser {
         }
 
         // parse constructor arg type identifiers
-        Identifier[] constructorArgTypes = new Identifier[constructorArgTypesDto.size()];
-        for (int i = 0; i < constructorArgTypes.length; i++) {
-            try {
-                constructorArgTypes[i] = Identifier.deserialize(constructorArgTypesDto.get(i));
-            } catch (DeserializationException e) {
-                throw e.prepend("constructor.argumentSorts." + i);
-            }
+        List<Identifier> constructorArgTypes;
+        try {
+            constructorArgTypes = Identifier.deserializeList(constructorArgTypesDto);
+        } catch (DeserializationException e) {
+            throw e.prepend("constructor.argumentSorts");
         }
         HornClauseEvent.Constructor constructor = new HornClauseEvent.Constructor(
                 constructorName,
-                TypedVar.fromNamesAndTypes(constructorArgs, Arrays.asList(constructorArgTypes)),
+                TypedVar.fromNamesAndTypes(constructorArgs, constructorArgTypes),
                 returnType);
 
         // parse head relation
-        JSONObject headDto = JsonUtils.getObject(eventDto, "head");
-        RelationApp head;
-        try {
-            head = RelationApp.deserialize(headDto);
-        } catch (DeserializationException e) {
-            throw e.prepend("head");
-        }
+        RelationApp head = RelationApp.deserializeAt(eventDto, "head");
 
         // parse body relations
         List<JSONObject> bodyRelationsDto = JsonUtils.getObjects(eventDto, "bodyRelations");
@@ -251,13 +358,7 @@ public class EventParser {
         }
 
         // parse semantic constraint
-        Object constraintDtoRaw = JsonUtils.get(eventDto, "constraint");
-        SmtTerm constraint;
-        try {
-            constraint = SmtTerm.deserialize(constraintDtoRaw);
-        } catch (DeserializationException e) {
-            throw e.prepend("constraint");
-        }
+        SmtTerm constraint = SmtTerm.deserializeAt(eventDto, "constraint");
 
         // parse variable list
         List<String> variablesDto = JsonUtils.getStrings(eventDto, "variables");
@@ -324,13 +425,8 @@ public class EventParser {
      * @return The deserialized event.
      * @throws DeserializationException If {@code eventDto} is not a valid representation of a "constraint" event.
      */
-    private static SpecEvent parseConstraint(JSONObject eventDto) throws DeserializationException {
-        Object constraintDtoRaw = JsonUtils.get(eventDto, "constraint");
-        try {
-            return new ConstraintEvent(SmtTerm.deserialize(constraintDtoRaw));
-        } catch (DeserializationException e) {
-            throw e.prepend("constraint");
-        }
+    private static ConstraintEvent parseConstraint(JSONObject eventDto) throws DeserializationException {
+        return new ConstraintEvent(SmtTerm.deserializeAt(eventDto, "constraint"));
     }
 
     /**
@@ -340,7 +436,7 @@ public class EventParser {
      * @return The deserialized event.
      * @throws DeserializationException If {@code eventDto} is not a valid representation of a "synth-fun" event.
      */
-    private static SpecEvent parseSynthFun(JSONObject eventDto) throws DeserializationException {
+    private static SynthFunEvent parseSynthFun(JSONObject eventDto) throws DeserializationException {
         String name = JsonUtils.getString(eventDto, "name");
         String termType = JsonUtils.getString(eventDto, "termType");
 

@@ -1,7 +1,9 @@
 package org.semgus.java.object;
 
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.semgus.java.util.DeserializationException;
+import org.semgus.java.util.JsonUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -48,6 +50,23 @@ public record Identifier(String name, Index... indices) {
             return new Identifier((String)nameRaw, indices);
         }
         throw new DeserializationException("Identifier must either be a string or an array!");
+    }
+
+    /**
+     * Deserializes an identifier from the SemGuS JSON format at a given key in a parent JSON object.
+     *
+     * @param parentDto The parent JSON object.
+     * @param key       The key whose value should be deserialized.
+     * @return The deserialized identifier.
+     * @throws DeserializationException If the value at {@code key} is not a valid representation of an identifier.
+     */
+    public static Identifier deserializeAt(JSONObject parentDto, String key) throws DeserializationException {
+        Object identifierDto = JsonUtils.get(parentDto, key);
+        try {
+            return deserialize(identifierDto);
+        } catch (DeserializationException e) {
+            throw e.prepend(key);
+        }
     }
 
     /**

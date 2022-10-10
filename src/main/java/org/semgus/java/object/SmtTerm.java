@@ -43,6 +43,23 @@ public sealed interface SmtTerm {
     }
 
     /**
+     * Deserializes an SMT term from the SemGuS JSON format at a given key in a parent JSON object.
+     *
+     * @param parentDto The parent JSON object.
+     * @param key       The key whose value should be deserialized.
+     * @return The deserialized SMT term.
+     * @throws DeserializationException If the value at {@code key} is not a valid representation of an SMT term.
+     */
+    static SmtTerm deserializeAt(JSONObject parentDto, String key) throws DeserializationException {
+        Object termDto = JsonUtils.get(parentDto, key);
+        try {
+            return deserialize(termDto);
+        } catch (DeserializationException e) {
+            throw e.prepend(key);
+        }
+    }
+
+    /**
      * Deserializes a function application.
      *
      * @param termDto The JSON representation of the function application.
@@ -50,23 +67,9 @@ public sealed interface SmtTerm {
      * @throws DeserializationException If {@code termDto} is not a valid representation of a function application.
      */
     private static SmtTerm deserializeApplication(JSONObject termDto) throws DeserializationException {
-        // deserialize function identifier
-        Object idDto = JsonUtils.get(termDto, "name");
-        Identifier id;
-        try {
-            id = Identifier.deserialize(idDto);
-        } catch (DeserializationException e) {
-            throw e.prepend("name");
-        }
-
-        // deserialize return type identifier
-        Object returnTypeDto = JsonUtils.get(termDto, "returnSort");
-        Identifier returnType;
-        try {
-            returnType = Identifier.deserialize(returnTypeDto);
-        } catch (DeserializationException e) {
-            throw e.prepend("returnSort");
-        }
+        // deserialize function and return type identifiers
+        Identifier id = Identifier.deserializeAt(termDto, "name");
+        Identifier returnType = Identifier.deserializeAt(termDto, "returnSort");
 
         // zip together argument terms and argument types
         JSONArray argTypes = JsonUtils.getArray(termDto, "argumentSorts");
@@ -116,28 +119,15 @@ public sealed interface SmtTerm {
         for (int i = 0; i < bindings.length; i++) {
             JSONObject bindingDto = bindingsDto.get(i);
             try {
-                String name = JsonUtils.getString(bindingDto, "name");
-                Object typeDto = JsonUtils.get(bindingDto, "sort");
-                Identifier type;
-                try {
-                    type = Identifier.deserialize(typeDto);
-                } catch (DeserializationException e) {
-                    throw e.prepend("sort");
-                }
-                bindings[i] = new TypedVar(name, type);
+                bindings[i] = new TypedVar(JsonUtils.getString(bindingDto, "name"),
+                        Identifier.deserializeAt(bindingDto, "sort"));
             } catch (DeserializationException e) {
                 throw e.prepend("bindings." + i);
             }
         }
 
         // deserialize child term
-        Object childDtoRaw = JsonUtils.get(termDto, "child");
-        SmtTerm child;
-        try {
-            child = deserialize(childDtoRaw);
-        } catch (DeserializationException e) {
-            throw e.prepend("child");
-        }
+        SmtTerm child = deserializeAt(termDto, "child");
 
         return new Quantifier(qType, Arrays.asList(bindings), child);
     }
@@ -150,15 +140,7 @@ public sealed interface SmtTerm {
      * @throws DeserializationException If {@code termDto} is not a valid representation of a variable.
      */
     private static SmtTerm deserializeVariable(JSONObject termDto) throws DeserializationException {
-        String name = JsonUtils.getString(termDto, "name");
-        Object typeDto = JsonUtils.get(termDto, "sort");
-        Identifier type;
-        try {
-            type = Identifier.deserialize(typeDto);
-        } catch (DeserializationException e) {
-            throw e.prepend("sort");
-        }
-        return new Variable(name, type);
+        return new Variable(JsonUtils.getString(termDto, "name"), Identifier.deserializeAt(termDto, "sort"));
     }
 
     /**

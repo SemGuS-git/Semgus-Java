@@ -2,6 +2,7 @@ package org.semgus.java.problem;
 
 import org.semgus.java.object.AttributeValue;
 import org.semgus.java.object.RelationApp;
+import org.semgus.java.object.SmtContext;
 import org.semgus.java.object.SmtTerm;
 
 import java.util.List;
@@ -15,10 +16,12 @@ import java.util.Map;
  * @param nonTerminals      The grammar of the target DSL.
  * @param constraints       The constraints specifying the target function.
  * @param metadata          Metadata for the synthesis problem.
+ * @param smtContext        The SMT context of the synthesis problem.
  */
 public record SemgusProblem(String targetName, SemgusNonTerminal targetNonTerminal,
                             Map<String, SemgusNonTerminal> nonTerminals, List<SmtTerm> constraints,
-                            Map<String, AttributeValue> metadata) {
+                            Map<String, AttributeValue> metadata,
+                            SmtContext smtContext) {
 
     /**
      * Produces a human-readable string representation (over multiple lines) of this synthesis problem.

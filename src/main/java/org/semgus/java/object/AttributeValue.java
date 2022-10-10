@@ -1,7 +1,9 @@
 package org.semgus.java.object;
 
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.semgus.java.util.DeserializationException;
+import org.semgus.java.util.JsonUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -37,6 +39,23 @@ public sealed interface AttributeValue {
         }
         throw new DeserializationException(
                 String.format("Could not deserialize attribute value \"%s\"", attrValDtoRaw));
+    }
+
+    /**
+     * Deserializes an attribute value from the SemGuS JSON format at a given key in a parent JSON object.
+     *
+     * @param parentDto The parent JSON object.
+     * @param key       The key whose value should be deserialized.
+     * @return The deserialized attribute value.
+     * @throws DeserializationException If the value at {@code key} is not a valid representation of an attribute value.
+     */
+    static AttributeValue deserializeAt(JSONObject parentDto, String key) throws DeserializationException {
+        Object attrValDto = JsonUtils.get(parentDto, key);
+        try {
+            return deserialize(attrValDto);
+        } catch (DeserializationException e) {
+            throw e.prepend(key);
+        }
     }
 
     /**
