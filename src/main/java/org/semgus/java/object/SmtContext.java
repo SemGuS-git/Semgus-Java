@@ -5,10 +5,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * A context for SMT containing auxiliary datatype and function definitions.
+ * A context for SMT containing datatype and function definitions.
  *
- * @param datatypes The table of auxiliary datatype definitions.
- * @param functions The table of auxiliary function definitions.
+ * @param datatypes The table of datatype definitions.
+ * @param functions The table of function definitions.
  */
 public record SmtContext(Map<String, Datatype> datatypes, Map<String, SmtContext.Function> functions) {
 
@@ -29,7 +29,7 @@ public record SmtContext(Map<String, Datatype> datatypes, Map<String, SmtContext
     }
 
     /**
-     * A definition of an auxiliary datatype.
+     * A definition of an (inductive) datatype.
      *
      * @param name         The name of the datatype.
      * @param constructors The set of constructors for the datatype.
@@ -47,7 +47,7 @@ public record SmtContext(Map<String, Datatype> datatypes, Map<String, SmtContext
         }
 
         /**
-         * A constructor for an auxiliary datatype.
+         * A constructor for a datatype.
          *
          * @param name          The name of the constructor.
          * @param argumentTypes The types of the constructor's arguments.
@@ -72,7 +72,7 @@ public record SmtContext(Map<String, Datatype> datatypes, Map<String, SmtContext
     }
 
     /**
-     * A definition of an auxiliary function.
+     * A definition of a function.
      *
      * @param name      The name of the function.
      * @param arguments The arguments to the function.
@@ -84,7 +84,7 @@ public record SmtContext(Map<String, Datatype> datatypes, Map<String, SmtContext
         public String toString() {
             return String.format(
                     "(lambda (%s) %s)",
-                    arguments.stream().map(TypedVar::toStringSExpr).collect(Collectors.joining(" ")),
+                    arguments.stream().map(TypedVar::toString).collect(Collectors.joining(" ")),
                     body);
         }
 

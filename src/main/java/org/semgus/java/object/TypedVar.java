@@ -28,16 +28,17 @@ public record TypedVar(String name, Identifier type) {
 
     @Override
     public String toString() {
-        return String.format("%s: %s", name, type);
+        return String.format("(%s %s)", name, type);
     }
 
     /**
-     * Stringifies this typed variable as an s-expression of the form "(var type)".
+     * Use {@link #toString()} instead.
      *
      * @return The stringified typed variable.
      */
+    @Deprecated(since = "1.1.0")
     public String toStringSExpr() {
-        return String.format("(%s %s)", name, type);
+        return toString();
     }
 
 }

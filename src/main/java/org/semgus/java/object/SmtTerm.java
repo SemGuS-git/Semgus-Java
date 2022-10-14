@@ -33,6 +33,8 @@ public sealed interface SmtTerm {
                 case "application" -> deserializeApplication(termDto); // a function application
                 case "exists" -> deserializeQuantifier(termDto, Quantifier.Type.EXISTS); // an existential quantifier
                 case "forall" -> deserializeQuantifier(termDto, Quantifier.Type.FOR_ALL); // a universal quantifier
+                case "lambda" -> deserializeLambda(termDto); // a lambda abstraction
+                case "match" -> deserializeMatch(termDto); // a pattern matching expression
                 case "variable" -> deserializeVariable(termDto); // a variable
                 case "bitvector" -> deserializeBitVector(termDto); // a bit vector
                 default -> throw new DeserializationException(
@@ -133,6 +135,44 @@ public sealed interface SmtTerm {
     }
 
     /**
+     * Deserializes a lambda abstraction.
+     *
+     * @param termDto The JSON representation of the lambda abstraction.
+     * @return The deserialized lambda abstraction.
+     * @throws DeserializationException If {@code termDto} is not a valid representation of lambda abstraction.
+     */
+    private static SmtTerm deserializeLambda(JSONObject termDto) throws DeserializationException {
+        return new Lambda(JsonUtils.getStrings(termDto, "arguments"), deserializeAt(termDto, "body"));
+    }
+
+    /**
+     * Deserializes a pattern-matching expression.
+     *
+     * @param termDto The JSON representation of the pattern-matching expression.
+     * @return The deserialized pattern-matching expression.
+     * @throws DeserializationException If {@code termDto} is not a valid representation of a pattern match.
+     */
+    private static SmtTerm deserializeMatch(JSONObject termDto) throws DeserializationException {
+        SmtTerm matchTerm = deserializeAt(termDto, "term");
+        List<JSONObject> casesDto = JsonUtils.getObjects(termDto, "binders");
+
+        Match.Case[] cases = new Match.Case[casesDto.size()];
+        for (int i = 0; i < cases.length; i++) {
+            JSONObject caseDto = casesDto.get(i);
+            try {
+                cases[i] = new Match.Case(
+                        JsonUtils.getString(caseDto, "operator"),
+                        JsonUtils.getStrings(caseDto, "arguments"),
+                        deserializeAt(caseDto, "child"));
+            } catch (DeserializationException e) {
+                throw e.prepend("binders." + i);
+            }
+        }
+
+        return new Match(matchTerm, Arrays.asList(cases));
+    }
+
+    /**
      * Deserializes a variable.
      *
      * @param termDto The JSON representation of the variable.
@@ -229,10 +269,7 @@ public sealed interface SmtTerm {
 
         @Override
         public String toString() {
-            if (arguments.size() == 0) {
-                return "(" + name + ")";
-            }
-            return String.format("(%s %s)",
+            return arguments.isEmpty() ? name.toString() : String.format("(%s %s)",
                     name, arguments.stream().map(TypedTerm::toString).collect(Collectors.joining(" ")));
         }
 
@@ -269,30 +306,31 @@ public sealed interface SmtTerm {
             /**
              * The existential quantifier.
              */
-            EXISTS("∃"),
+            EXISTS("∃", "exists"),
 
             /**
              * The universal quantifier.
              */
-            FOR_ALL("∀");
+            FOR_ALL("∀", "forall");
 
             /**
              * The symbol representing the quantifier.
              */
-            public final String symbol;
+            public final String symbol, name;
 
             /**
              * Constructs a quantifier type.
              *
              * @param symbol The symbol representing the quantifier.
              */
-            Type(String symbol) {
+            Type(String symbol, String name) {
                 this.symbol = symbol;
+                this.name = name;
             }
 
             @Override
             public String toString() {
-                return symbol;
+                return name;
             }
         }
 
@@ -300,8 +338,58 @@ public sealed interface SmtTerm {
         public String toString() {
             return String.format("(%s (%s) %s)",
                     type,
-                    bindings.stream().map(TypedVar::toStringSExpr).collect(Collectors.joining(" ")),
+                    bindings.stream().map(TypedVar::toString).collect(Collectors.joining(" ")),
                     child);
+        }
+
+    }
+
+    /**
+     * Represents a lambda abstraction in an SMT formula.
+     *
+     * @param arguments The names of the lambda arguments. Beware of conflicts with variables in the outer context!
+     * @param body      The body of the lambda term, which may contain the arguments as bound variables.
+     */
+    record Lambda(List<String> arguments, SmtTerm body) implements SmtTerm {
+
+        @Override
+        public String toString() {
+            return String.format("(lambda (%s) %s)", String.join(" ", arguments), body);
+        }
+
+    }
+
+    /**
+     * Represents a pattern-matching expression in an SMT formula. Used to match against constructors for inductive
+     * types as defined by {@link org.semgus.java.event.SmtSpecEvent.DefineDatatypeEvent}.
+     *
+     * @param matchTerm The term being matched on.
+     * @param cases     The match cases.
+     */
+    record Match(SmtTerm matchTerm, List<Case> cases) implements SmtTerm {
+
+        @Override
+        public String toString() {
+            return String.format("(match %s (%s))",
+                    matchTerm,
+                    cases.stream().map(Case::toString).collect(Collectors.joining(" ")));
+        }
+
+        /**
+         * A match case in a {@link Match} pattern-matching expression.
+         *
+         * @param opName    The name of the operator to match against.
+         * @param arguments The names to which the operator's arguments should be bound in the result term.
+         * @param result    The match result.
+         */
+        public record Case(String opName, List<String> arguments, SmtTerm result) {
+
+            @Override
+            public String toString() {
+                return arguments.isEmpty() ? String.format("(%s %s)", opName, result)
+                        : String.format("((%s %s) %s)", opName, String.join(" ", arguments), result);
+            }
+
         }
 
     }
@@ -359,11 +447,11 @@ public sealed interface SmtTerm {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder("<");
+            StringBuilder sb = new StringBuilder("#b");
             for (int i = size - 1; i >= 0; i--) {
                 sb.append(value.get(i) ? '1' : '0');
             }
-            return sb.append(">").toString();
+            return sb.toString();
         }
 
     }

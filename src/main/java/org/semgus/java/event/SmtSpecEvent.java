@@ -5,6 +5,7 @@ import org.semgus.java.object.SmtTerm;
 import org.semgus.java.object.TypedVar;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A SemGuS parser event of the "smt" type.
@@ -12,7 +13,7 @@ import java.util.List;
 public sealed interface SmtSpecEvent extends SpecEvent {
 
     /**
-     * A "declare-function" event declaring the signature of an auxiliary function.
+     * A "declare-function" event declaring the signature of a function.
      *
      * @param name          The name of the function.
      * @param returnType    The return type of the function.
@@ -27,7 +28,7 @@ public sealed interface SmtSpecEvent extends SpecEvent {
     }
 
     /**
-     * A "define-function" event giving a definition for a previously-declared auxiliary function.
+     * A "define-function" event giving a definition for a previously-declared function.
      *
      * @param name       The name of the function.
      * @param returnType The return type of the function.
@@ -40,11 +41,20 @@ public sealed interface SmtSpecEvent extends SpecEvent {
             List<TypedVar> arguments,
             SmtTerm body
     ) implements SmtSpecEvent {
-        // NO-OP
+
+        /**
+         * Constructs a {@link org.semgus.java.object.SmtTerm.Lambda} lambda abstraction from the function definition.
+         *
+         * @return The new lambda abstraction SMT term.
+         */
+        public SmtTerm toLambda() {
+            return new SmtTerm.Lambda(arguments.stream().map(TypedVar::name).collect(Collectors.toList()), body);
+        }
+
     }
 
     /**
-     * A "declare-datatype" event declaring the signature of an auxiliary datatype.
+     * A "declare-datatype" event declaring the signature of a datatype.
      *
      * @param name The name of the datatype.
      */
@@ -53,7 +63,7 @@ public sealed interface SmtSpecEvent extends SpecEvent {
     }
 
     /**
-     * A "define-datatype" event giving a definition for a previously-declared auxiliary datatype.
+     * A "define-datatype" event giving a definition for a previously-declared datatype.
      *
      * @param name         The name of the datatype.
      * @param constructors The constructors of the datatype.

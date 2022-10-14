@@ -96,14 +96,14 @@ public class ProblemGenerator {
     private final Map<String, AttributeValue> metadata = new HashMap<>();
 
     /**
-     * Collected auxiliary datatype definitions.
+     * Collected datatype definitions.
      */
-    private final Map<String, SmtContext.Datatype> auxDatatypeDefs = new HashMap<>();
+    private final Map<String, SmtContext.Datatype> datatypeDefs = new HashMap<>();
 
     /**
-     * Collected auxiliary function definitions.
+     * Collected function definitions.
      */
-    private final Map<String, SmtContext.Function> auxFunctionDefs = new HashMap<>();
+    private final Map<String, SmtContext.Function> functionDefs = new HashMap<>();
 
     /**
      * Collected term types.
@@ -156,21 +156,21 @@ public class ProblemGenerator {
     }
 
     /**
-     * Collects an auxiliary function definition from a "declare-datatype" event.
+     * Collects a function definition from a "declare-datatype" event.
      *
      * @param event The event.
      */
     private void consumeDefineFunction(SmtSpecEvent.DefineFunctionEvent event) {
-        auxFunctionDefs.put(event.name(), new SmtContext.Function(event.name(), event.arguments(), event.body()));
+        functionDefs.put(event.name(), new SmtContext.Function(event.name(), event.arguments(), event.body()));
     }
 
     /**
-     * Collects an auxiliary datatype definition from a "declare-datatype" event.
+     * Collects a datatype definition from a "declare-datatype" event.
      *
      * @param event The event.
      */
     private void consumeDefineDatatype(SmtSpecEvent.DefineDatatypeEvent event) {
-        auxDatatypeDefs.put(event.name(), new SmtContext.Datatype(event.name(), event.constructors().stream()
+        datatypeDefs.put(event.name(), new SmtContext.Datatype(event.name(), event.constructors().stream()
                 .map(c -> new SmtContext.Datatype.Constructor(c.name(), c.argumentTypes()))
                 .collect(Collectors.toUnmodifiableMap(SmtContext.Datatype.Constructor::name, c -> c))));
     }
@@ -289,7 +289,7 @@ public class ProblemGenerator {
                 nonTerminals,
                 new ArrayList<>(constraints),
                 new HashMap<>(metadata),
-                new SmtContext(auxDatatypeDefs, auxFunctionDefs));
+                new SmtContext(datatypeDefs, functionDefs));
     }
 
     /**
