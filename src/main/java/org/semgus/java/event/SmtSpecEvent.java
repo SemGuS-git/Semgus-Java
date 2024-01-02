@@ -1,10 +1,13 @@
 package org.semgus.java.event;
 
+import org.semgus.java.object.AttributeValue;
 import org.semgus.java.object.Identifier;
 import org.semgus.java.object.SmtTerm;
 import org.semgus.java.object.TypedVar;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -34,13 +37,20 @@ public sealed interface SmtSpecEvent extends SpecEvent {
      * @param returnType The return type of the function.
      * @param arguments  The arguments to the function.
      * @param body       The body of the function.
+     * @param annotations The annotations (usually about input/output variables) on the function body. (optional)
      */
     record DefineFunctionEvent(
             String name,
             Identifier returnType,
             List<TypedVar> arguments,
-            SmtTerm body
+            SmtTerm body,
+            Map<String, AttributeValue> annotations
     ) implements SmtSpecEvent {
+
+        public DefineFunctionEvent(String name, Identifier returnType, List<TypedVar> arguments,
+                            SmtTerm body) {
+            this(name, returnType, arguments, body, new HashMap<>());
+        }
 
         /**
          * Constructs a {@link org.semgus.java.object.SmtTerm.Lambda} lambda abstraction from the function definition.
