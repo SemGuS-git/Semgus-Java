@@ -164,13 +164,13 @@ public class EventParser {
         String name = JsonUtils.getString(eventDto, "name");
         JSONObject rankDto = JsonUtils.getObject(eventDto, "rank");
 
-        Identifier returnType;
-        List<Identifier> argumentTypes;
+        Sort returnType;
+        List<Sort> argumentTypes;
         try {
-            returnType = Identifier.deserializeAt(rankDto, "returnSort");
+            returnType = Sort.deserializeAt(rankDto, "returnSort");
             JSONArray argumentTypesDto = JsonUtils.getArray(rankDto, "argumentSorts");
             try {
-                argumentTypes = Identifier.deserializeList(argumentTypesDto);
+                argumentTypes = Sort.deserializeList(argumentTypesDto);
             } catch (DeserializationException e) {
                 throw e.prepend("argumentSorts");
             }
@@ -246,9 +246,9 @@ public class EventParser {
                 String constructorName = JsonUtils.getString(constructorDto, "name");
                 JSONArray argumentTypesDto = JsonUtils.getArray(constructorDto, "children");
 
-                List<Identifier> argumentTypes;
+                List<Sort> argumentTypes;
                 try {
-                    argumentTypes = Identifier.deserializeList(argumentTypesDto);
+                    argumentTypes = Sort.deserializeList(argumentTypesDto);
                 } catch (DeserializationException e) {
                     throw e.prepend("children");
                 }
@@ -331,10 +331,10 @@ public class EventParser {
                     "constructor");
         }
 
-        // parse constructor arg type identifiers
-        List<Identifier> constructorArgTypes;
+        // parse constructor arg type sorts
+        List<Sort> constructorArgTypes;
         try {
-            constructorArgTypes = Identifier.deserializeList(constructorArgTypesDto);
+            constructorArgTypes = Sort.deserializeList(constructorArgTypesDto);
         } catch (DeserializationException e) {
             throw e.prepend("constructor.argumentSorts");
         }

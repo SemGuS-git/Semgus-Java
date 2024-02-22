@@ -69,9 +69,9 @@ public sealed interface SmtTerm {
      * @throws DeserializationException If {@code termDto} is not a valid representation of a function application.
      */
     private static SmtTerm deserializeApplication(JSONObject termDto) throws DeserializationException {
-        // deserialize function and return type identifiers
-        Identifier id = Identifier.deserializeAt(termDto, "name");
-        Identifier returnType = Identifier.deserializeAt(termDto, "returnSort");
+        // deserialize function and return type sorts
+        Sort id = Sort.deserializeAt(termDto, "name");
+        Sort returnType = Sort.deserializeAt(termDto, "returnSort");
 
         // zip together argument terms and argument types
         JSONArray argTypes = JsonUtils.getArray(termDto, "argumentSorts");
@@ -84,9 +84,9 @@ public sealed interface SmtTerm {
         Application.TypedTerm[] argTerms = new Application.TypedTerm[argTypes.size()];
         for (int i = 0; i < argTerms.length; i++) {
             // deserialize type
-            Identifier type;
+            Sort type;
             try {
-                type = Identifier.deserialize(argTypes.get(i));
+                type = Sort.deserialize(argTypes.get(i));
             } catch (DeserializationException e) {
                 throw e.prepend("argumentSorts." + i);
             }
@@ -122,7 +122,7 @@ public sealed interface SmtTerm {
             JSONObject bindingDto = bindingsDto.get(i);
             try {
                 bindings[i] = new TypedVar(JsonUtils.getString(bindingDto, "name"),
-                        Identifier.deserializeAt(bindingDto, "sort"));
+                        Sort.deserializeAt(bindingDto, "sort"));
             } catch (DeserializationException e) {
                 throw e.prepend("bindings." + i);
             }
@@ -180,7 +180,7 @@ public sealed interface SmtTerm {
      * @throws DeserializationException If {@code termDto} is not a valid representation of a variable.
      */
     private static SmtTerm deserializeVariable(JSONObject termDto) throws DeserializationException {
-        return new Variable(JsonUtils.getString(termDto, "name"), Identifier.deserializeAt(termDto, "sort"));
+        return new Variable(JsonUtils.getString(termDto, "name"), Sort.deserializeAt(termDto, "sort"));
     }
 
     /**
@@ -261,11 +261,11 @@ public sealed interface SmtTerm {
     /**
      * Represents a function application in an SMT formula.
      *
-     * @param name       The identifier for the function.
+     * @param name       The Sort for the function.
      * @param returnType The function's return type.
      * @param arguments  The arguments to the function.
      */
-    record Application(Identifier name, Identifier returnType, List<TypedTerm> arguments) implements SmtTerm {
+    record Application(Sort name, Sort returnType, List<TypedTerm> arguments) implements SmtTerm {
 
         @Override
         public String toString() {
@@ -279,7 +279,7 @@ public sealed interface SmtTerm {
          * @param type The argument type.
          * @param term The subterm being passed as an argument.
          */
-        public record TypedTerm(Identifier type, SmtTerm term) {
+        public record TypedTerm(Sort type, SmtTerm term) {
 
             @Override
             public String toString() {
@@ -398,9 +398,9 @@ public sealed interface SmtTerm {
      * Represents a variable in an SMT formula.
      *
      * @param name The name of the variable.
-     * @param type The identifier for the type of the variable.
+     * @param type The Sort for the type of the variable.
      */
-    record Variable(String name, Identifier type) implements SmtTerm {
+    record Variable(String name, Sort type) implements SmtTerm {
 
         @Override
         public String toString() {
