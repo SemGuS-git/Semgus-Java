@@ -1,6 +1,7 @@
 plugins {
     java
     `maven-publish`
+    id("com.github.johnrengelman.shadow") version "7.0.0"
 }
 
 group = "org.semgus"
@@ -31,6 +32,15 @@ tasks.getByName<Test>("test") {
 }
 
 tasks.getByName<Jar>("jar") {
+    manifest {
+        attributes(
+            "Main-Class" to "org.semgus.java.Main"
+        )
+    }
+}
+
+tasks.shadowJar {
+    configurations = listOf(project.configurations.getByName("runtimeClasspath")) // Include runtime dependencies in shadow JAR
     manifest {
         attributes(
             "Main-Class" to "org.semgus.java.Main"

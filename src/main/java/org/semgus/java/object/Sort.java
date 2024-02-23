@@ -26,14 +26,14 @@ public record Sort(Identifier ident, Sort... params) {
      */
     public static Sort deserialize(Object idDtoRaw) throws DeserializationException {
         if (idDtoRaw instanceof JSONObject idDto) { // if it's an object; then it's a parametrized sort.
-            // first sortKind is name, sortParams are params
+            // first kind is name, params are params
             // parse identifier name
-            if (!idDto.containsKey("sortKind") || !idDto.containsKey("sortParams")) {
+            if (!idDto.containsKey("kind") || !idDto.containsKey("params")) {
                 throw new DeserializationException("Parametric sort is missing information!");
             }
-            Identifier ident = Identifier.deserialize(idDto.get("sortKind"));
+            Identifier ident = Identifier.deserialize(idDto.get("kind"));
 
-            if (idDto.get("sortParams") instanceof JSONArray idParams) {
+            if (idDto.get("params") instanceof JSONArray idParams) {
                 // parse args
                 Sort[] params = new Sort[idParams.size()];
                 for (int i = 0; i < params.length; i++) {
