@@ -52,50 +52,14 @@ public record Identifier(String name, Index... indices) {
         throw new DeserializationException("Identifier must either be a string or an array!");
     }
 
-    /**
-     * Deserializes an identifier from the SemGuS JSON format at a given key in a parent JSON object.
-     *
-     * @param parentDto The parent JSON object.
-     * @param key       The key whose value should be deserialized.
-     * @return The deserialized identifier.
-     * @throws DeserializationException If the value at {@code key} is not a valid representation of an identifier.
-     */
-    public static Identifier deserializeAt(JSONObject parentDto, String key) throws DeserializationException {
-        Object identifierDto = JsonUtils.get(parentDto, key);
-        try {
-            return deserialize(identifierDto);
-        } catch (DeserializationException e) {
-            throw e.prepend(key);
-        }
-    }
-
-    /**
-     * Deserializes a list of identifiers from a JSON array.
-     *
-     * @param idsDto The JSON array of identifiers.
-     * @return The list of the deserialized identifiers.
-     * @throws DeserializationException If {@code idsDto} is not an array of valid representations of identifiers.
-     */
-    public static List<Identifier> deserializeList(JSONArray idsDto) throws DeserializationException {
-        Identifier[] ids = new Identifier[idsDto.size()];
-        for (int i = 0; i < ids.length; i++) {
-            try {
-                ids[i] = deserialize(idsDto.get(i));
-            } catch (DeserializationException e) {
-                throw e.prepend(i);
-            }
-        }
-        return Arrays.asList(ids);
-    }
-
     @Override
     public String toString() {
         if (indices.length == 0) {
             return name;
         }
-        StringBuilder sb = new StringBuilder("(").append(name);
+        StringBuilder sb = new StringBuilder("(_ ").append(name);
         for (Index index : indices) {
-            sb.append(" ").append(index);
+            sb.append(" ").append(index.toString());
         }
         return sb.append(")").toString();
     }
@@ -113,26 +77,10 @@ public record Identifier(String name, Index... indices) {
          * @throws DeserializationException If {@code indexDtoRaw} is not a valid representation of an index value.
          */
         static Index deserialize(Object indexDtoRaw) throws DeserializationException {
-            if (indexDtoRaw instanceof String index) {
-                return new NString(index);
-            } else if (indexDtoRaw instanceof Long index) {
+            if (indexDtoRaw instanceof Long index) {
                 return new NInt(index.intValue());
             }
-            throw new DeserializationException("Identifier index must either be a string or integer constant!");
-        }
-
-        /**
-         * A string index value.
-         *
-         * @param value The string value.
-         */
-        record NString(String value) implements Index {
-
-            @Override
-            public String toString() {
-                return "\"" + value + "\"";
-            }
-
+            throw new DeserializationException("Identifier index must be an integer constant!");
         }
 
         /**

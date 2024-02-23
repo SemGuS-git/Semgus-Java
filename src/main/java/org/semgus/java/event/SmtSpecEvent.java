@@ -1,6 +1,6 @@
 package org.semgus.java.event;
 
-import org.semgus.java.object.Identifier;
+import org.semgus.java.object.Sort;
 import org.semgus.java.object.SmtTerm;
 import org.semgus.java.object.TypedVar;
 
@@ -21,8 +21,8 @@ public sealed interface SmtSpecEvent extends SpecEvent {
      */
     record DeclareFunctionEvent(
             String name,
-            Identifier returnType,
-            List<Identifier> argumentTypes
+            Sort returnType,
+            List<Sort> argumentTypes
     ) implements SmtSpecEvent {
         // NO-OP
     }
@@ -37,7 +37,7 @@ public sealed interface SmtSpecEvent extends SpecEvent {
      */
     record DefineFunctionEvent(
             String name,
-            Identifier returnType,
+            Sort returnType,
             List<TypedVar> arguments,
             SmtTerm body
     ) implements SmtSpecEvent {
@@ -76,7 +76,7 @@ public sealed interface SmtSpecEvent extends SpecEvent {
          * @param name          The name of the constructor.
          * @param argumentTypes The types of the arguments to the constructor.
          */
-        public record Constructor(String name, List<Identifier> argumentTypes) {
+        public record Constructor(String name, List<Sort> argumentTypes) {
             // NO-OP
         }
 

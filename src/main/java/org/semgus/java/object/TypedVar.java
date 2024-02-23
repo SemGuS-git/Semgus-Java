@@ -10,17 +10,17 @@ import java.util.stream.IntStream;
  * @param name The variable's name.
  * @param type The name of the variable's type.
  */
-public record TypedVar(String name, Identifier type) {
+public record TypedVar(String name, Sort type) {
 
     /**
-     * Zips a list of variable names and a list of type identifiers into a list of typed variables. The two lists should
+     * Zips a list of variable names and a list of type Sorts into a list of typed variables. The two lists should
      * have the same length.
      *
      * @param names A list of variable names.
-     * @param types A list of type identifiers.
+     * @param types A list of type Sorts.
      * @return A new list of typed variables.
      */
-    public static List<TypedVar> fromNamesAndTypes(List<String> names, List<Identifier> types) {
+    public static List<TypedVar> fromNamesAndTypes(List<String> names, List<Sort> types) {
         return IntStream.range(0, names.size())
                 .mapToObj(i -> new TypedVar(names.get(i), types.get(i)))
                 .collect(Collectors.toList());

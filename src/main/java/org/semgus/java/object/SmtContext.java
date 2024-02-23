@@ -52,7 +52,7 @@ public record SmtContext(Map<String, Datatype> datatypes, Map<String, SmtContext
          * @param name          The name of the constructor.
          * @param argumentTypes The types of the constructor's arguments.
          */
-        public record Constructor(String name, List<Identifier> argumentTypes) {
+        public record Constructor(String name, List<Sort> argumentTypes) {
 
             @Override
             public String toString() {
@@ -61,7 +61,7 @@ public record SmtContext(Map<String, Datatype> datatypes, Map<String, SmtContext
                 }
 
                 StringBuilder sb = new StringBuilder("(").append(name);
-                for (Identifier argumentType : argumentTypes) {
+                for (Sort argumentType : argumentTypes) {
                     sb.append(" ").append(argumentType);
                 }
                 return sb.append(")").toString();

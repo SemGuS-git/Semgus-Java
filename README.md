@@ -67,4 +67,6 @@ problem, then dumps it to standard output:
 $ java -jar semgus-java.jar max2-exp.sem.json
 ```
 
+The current JSON format is in line with the 2-23-24 edition of Semgus-Parser which introduced support for parametric sorts.
+
 For more information, check out all the declarations and accompanying JavaDocs in the source code.

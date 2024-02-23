@@ -35,10 +35,10 @@ public record RelationApp(String name, List<TypedVar> arguments) {
                     sigDto.size(), args.size()));
         }
 
-        // deserialize type identifiers
-        List<Identifier> types;
+        // deserialize type sorts
+        List<Sort> types;
         try {
-            types = Identifier.deserializeList(sigDto);
+            types = Sort.deserializeList(sigDto);
         } catch (DeserializationException e) {
             throw e.prepend("signature");
         }
