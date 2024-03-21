@@ -58,7 +58,7 @@ public record Identifier(String name, Index... indices) {
             if (!(paramsRaw instanceof JSONArray params)) {
                 throw new DeserializationException("'params' is not a JSON array!", 1);
             }
-            Index[] indices = new Index[params.size() - 1];
+            Index[] indices = new Index[params.size()];
             for (int i = 0; i < indices.length; i++) {
                 try {
                     indices[i] = Index.deserialize(params.get(i));
