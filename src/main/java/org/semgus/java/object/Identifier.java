@@ -48,8 +48,28 @@ public record Identifier(String name, Index... indices) {
             }
 
             return new Identifier((String)nameRaw, indices);
+        } else if (idDtoRaw instanceof JSONObject idDto) {
+            // it's possibly a (Seq Int) or other types defined in a similar way
+            Object nameRaw = idDto.get("kind");
+            if (!(nameRaw instanceof String name)) {
+                throw new DeserializationException("Identifier name must be a string!", 0);
+            }
+            Object paramsRaw = idDto.get("params");
+            if (!(paramsRaw instanceof JSONArray params)) {
+                throw new DeserializationException("'params' is not a JSON array!", 1);
+            }
+            Index[] indices = new Index[params.size() - 1];
+            for (int i = 0; i < indices.length; i++) {
+                try {
+                    indices[i] = Index.deserialize(params.get(i));
+                } catch (DeserializationException e) {
+                    throw e.prepend(i + 1);
+                }
+            }
+
+            return new Identifier(name, indices);
         }
-        throw new DeserializationException("Identifier must either be a string or an array!");
+        throw new DeserializationException("Identifier must either be a string, an array or an object containing keys 'kind' and 'params'!");
     }
 
     @Override
