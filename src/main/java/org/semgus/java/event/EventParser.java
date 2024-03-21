@@ -117,7 +117,7 @@ public class EventParser {
      */
     public static SpecEvent parseEvent(JSONObject eventDto) throws DeserializationException {
         String eventType = JsonUtils.getString(eventDto, "$event");
-        return switch (eventType) {
+        SpecEvent event =  switch (eventType) {
             // meta events
             case "set-info" -> parseSetInfo(eventDto);
             case "end-of-stream" -> new MetaSpecEvent.StreamEndEvent();
@@ -138,6 +138,8 @@ public class EventParser {
             default -> throw new DeserializationException(
                     String.format("Unknown specification event \"%s\"", eventType), "$event");
         };
+
+        return event;
     }
 
     /**
@@ -196,6 +198,7 @@ public class EventParser {
 
         TypedVar[] arguments = new TypedVar[declEvent.argumentTypes().size()];
         SmtTerm body;
+        HashMap<String, AttributeValue> annotationMap = new HashMap<>();
         try {
             List<String> argNames = JsonUtils.getStrings(defnDto, "arguments");
             if (argNames.size() != arguments.length) {
@@ -210,11 +213,31 @@ public class EventParser {
             }
 
             body = SmtTerm.deserializeAt(defnDto, "body");
+
+            var bodyObj = JsonUtils.getObject(defnDto, "body");
+
+            if (bodyObj.containsKey("annotations")) {
+                Object annotationsObj = bodyObj.get("annotations");
+
+                if (!(annotationsObj instanceof JSONArray annotations)) {
+                    throw new DeserializationException("Annotation is neither null nor an array");
+                }
+
+                JsonUtils.ensureObjects(annotations);
+                for (Object annotationItemObj : annotations) {
+                    var annotationItem = (JSONObject) annotationItemObj;
+                    var keywordObj = JsonUtils.getObject(annotationItem, "keyword");
+                    var keyword = JsonUtils.getString(keywordObj, "name");
+                    var value = AttributeValue.deserializeAt(annotationItem, "value");
+                    annotationMap.put(keyword, value);
+                }
+            }
         } catch (DeserializationException e) {
             throw e.prepend("definition");
         }
 
-        return new DefineFunctionEvent(declEvent.name(), declEvent.returnType(), Arrays.asList(arguments), body);
+        return new DefineFunctionEvent(declEvent.name(), declEvent.returnType(),
+                Arrays.asList(arguments), body, annotationMap);
     }
 
     /**
